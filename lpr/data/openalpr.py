@@ -70,12 +70,14 @@ def _load_endtoend(root: str, region: str) -> List[Tuple[str, str, tuple]]:
 
 def build_recognition_dataset(benchmark_root: str, out_dir: str,
                               test_fraction: float = 0.2,
-                              include_endtoend: bool = True,
+                              endtoend_regions: Tuple[str, ...] = ("us", "eu", "br"),
                               seed: int = 1234) -> dict:
-    """Materialise real US plate crops into ``out_dir`` with a train/test split.
+    """Materialise real plate crops into ``out_dir`` with a train/test split.
 
-    seg_and_ocr crops are copied directly; endtoend plates are cropped from the
-    scene by their ground-truth box. Returns a summary dict.
+    seg_and_ocr crops (US) are copied directly; endtoend plates from each named
+    region are cropped from the scene by their ground-truth box. All regions here
+    use Latin-alphanumeric plates, matching the recognizer's charset. Returns a
+    summary dict.
     """
     rng = random.Random(seed)
     os.makedirs(out_dir, exist_ok=True)
@@ -92,8 +94,8 @@ def build_recognition_dataset(benchmark_root: str, out_dir: str,
         img = cv2.imread(path)
         if img is not None:
             crops.append((img, text))
-    if include_endtoend:
-        for path, text, (x, y, w, h) in _load_endtoend(benchmark_root, "us"):
+    for region in endtoend_regions:
+        for path, text, (x, y, w, h) in _load_endtoend(benchmark_root, region):
             img = cv2.imread(path)
             if img is None:
                 continue

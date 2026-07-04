@@ -99,6 +99,11 @@ def train(config_path: Optional[str] = None,
     train_samples = [(p, t) for p, t in train_samples if normalize_plate_text(t)]
     val_samples = [(p, t) for p, t in val_samples if normalize_plate_text(t)]
 
+    # Cap the base (synthetic) set first so --limit never eats the real data
+    # that gets appended below.
+    if limit:
+        train_samples = train_samples[:limit]
+
     # Fold in an extra (e.g. real) dataset, oversampled to give it weight.
     if extra_data_dir:
         extra_csv = os.path.join(extra_data_dir, "labels.csv")
@@ -112,9 +117,6 @@ def train(config_path: Optional[str] = None,
         val_samples = val_samples + extra_val
         print(f"[train] mixed in {len(extra_train)} extra train samples "
               f"x{extra_oversample} from {extra_data_dir}")
-
-    if limit:
-        train_samples = train_samples[:limit]
     if not train_samples:
         raise RuntimeError("No labelled training samples found.")
     if not val_samples:
