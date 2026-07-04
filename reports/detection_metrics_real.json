@@ -1,0 +1,12 @@
+{
+  "true_positives": 16,
+  "false_positives": 475,
+  "false_negatives": 115,
+  "precision": 0.032586558044806514,
+  "recall": 0.12213740458015267,
+  "f1": 0.05144694533762057,
+  "mean_iou": 0.595802524373153,
+  "iou_threshold": 0.4,
+  "num_images": 107,
+  "backend": "classical"
+}
