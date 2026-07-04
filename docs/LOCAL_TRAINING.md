@@ -1,73 +1,89 @@
-# Training locally on your own datasets
+# Training locally on your own datasets (GPU)
 
-This repo is built so large datasets are trained on your machine (ideally with a
-GPU), not in a sandbox. Clone it, drop a dataset in, and the scripts handle the
-rest.
+Large datasets train on your machine, not in a sandbox. The steps below are the
+full runbook for an NVIDIA/CUDA box. `config.yaml` ships GPU-sized defaults
+(`batch_size: 256`, `num_workers: 8`); the device is `auto`, which selects CUDA
+automatically.
+
+## 0. Set up the machine (once)
 
 ```bash
-git clone https://github.com/gil10101/LPR.git /Users/gil/Stuff/LPR
-cd /Users/gil/Stuff/LPR
+git clone https://github.com/gil10101/LPR.git
+cd LPR
 pip install -r requirements.txt
+pip install torch --index-url https://download.pytorch.org/whl/cu121   # CUDA build (or cu124)
+pip install ultralytics                                                # for the detector
+python -c "import torch; print('CUDA available:', torch.cuda.is_available())"   # must be True
 ```
 
-Set `training.device: cuda` in `config.yaml` if you have a GPU (the default
-`auto` picks it up automatically).
+## 1. Get the datasets onto this machine
 
-## Recognizer — a CSV recognition set (image + plate text)
-
-For a dataset shaped as an image folder + a CSV of `(image, text)` — e.g. the
-Kaggle "license-plate-text-recognition-dataset" with `lpr.csv`:
+Put both under `data/` (gitignored). Easiest is the Kaggle CLI directly on the
+GPU box (drop your `kaggle.json` in `~/.kaggle/`):
 
 ```bash
-# 1. Convert it into the trainer's layout (columns are auto-detected).
+pip install kaggle
+kaggle datasets download -d nickyazdani/license-plate-text-recognition-dataset -p data/nicklpsr --unzip
+kaggle datasets download -d fareselmenshawii/large-license-plate-dataset       -p data/llpd     --unzip
+```
+
+Then confirm the paths — the recognizer needs `lpr.csv` + the crops folder, the
+detector needs `images/{train,val}` + `labels/{train,val}`:
+
+```bash
+ls data/nicklpsr           # expect: lpr.csv  cropped_lps/
+ls data/llpd/images        # expect: train  val  (test)
+```
+
+Adjust the `--csv/--images/--dataset-root` flags below if your unzip puts them
+elsewhere.
+
+## 2. Recognizer  (~5–10 min on GPU)
+
+```bash
 python scripts/prepare_recognition_csv.py \
-    --csv /path/to/lpr.csv --images /path/to/images \
+    --csv data/nicklpsr/lpr.csv --images data/nicklpsr/cropped_lps \
     --out-dir data/kaggle_recognition
 
-# 2a. Train the reader on it directly:
 python scripts/train_recognizer.py --data-dir data/kaggle_recognition
-
-# 2b. …or mix it with the synthetic set (recommended — real optics + volume):
-python scripts/generate_synthetic.py
-python scripts/train_recognizer.py \
-    --extra-data-dir data/kaggle_recognition --extra-oversample 2
-
-# 3. Evaluate on the real test split.
 python scripts/evaluate.py --data-dir data/kaggle_recognition --split test
 ```
 
-If the CSV uses unusual column names, pass `--image-column` / `--text-column`.
-
-## Detector — a YOLO detection set (images + boxes)
-
-For a YOLO-format set (`images/{train,val}` + `labels/{train,val}`) — e.g. the
-Kaggle "large-license-plate-dataset":
-
+Optional — mix in synthetic for extra robustness:
 ```bash
-pip install ultralytics
-
-python scripts/train_detector.py \
-    --dataset-root /path/to/large-license-plate-dataset \
-    --epochs 50 --device 0            # --device 0 = first GPU, or cpu
-
-# The best weights install to models/detector/plate_yolo.pt.
-# Switch the app/pipeline to the learned detector:
-#   in config.yaml set  detector.backend: yolo
+python scripts/generate_synthetic.py
+python scripts/train_recognizer.py \
+    --extra-data-dir data/kaggle_recognition --extra-oversample 4
 ```
 
-## End result
+## 3. Detector  (~15–35 min on GPU)
 
-With both trained, the pipeline runs a learned YOLO detector into the CRNN
-reader — a real-world ANPR stack. Launch the dashboard to try it:
+```bash
+python scripts/train_detector.py \
+    --dataset-root data/llpd --device 0 --epochs 50 --batch 48 \
+    --base-weights yolov8s.pt --imgsz 640
+```
+
+That installs `models/detector/plate_yolo.pt`. Turn it on:
+```yaml
+# config.yaml
+detector:
+  backend: yolo
+```
+
+## 4. Run the app
 
 ```bash
 python app/app.py            # http://127.0.0.1:5000
 ```
 
-## Getting big data to a cloud/sandbox run
+Upload a car photo: the YOLO detector finds the plate, the CRNN reads it, and the
+`/dashboard` page shows the KPIs from your evaluation.
 
-A cloud agent can't read your local disk. To have one process a dataset, put it
-somewhere the run can reach: a GitHub repo under your account (small/medium
-sets, or via git-lfs), a release asset, or an object-storage URL. Kaggle and
-HuggingFace downloads happen on a machine that can reach them, then the result is
-pushed to that reachable location.
+## Notes
+
+- `evaluate.py` writes `reports/*.png` charts and updates `models/recognizer/
+  metrics.json`, which the dashboard reads. Re-run it after any training.
+- Both trainers save the best checkpoint continuously, so interrupting a run
+  (Ctrl-C) still leaves a usable model.
+- Training on CPU instead? Lower `batch_size` to 64–128 in `config.yaml`.

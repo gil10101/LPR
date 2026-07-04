@@ -53,10 +53,10 @@ huggingface:
 # ---------------------------------------------------------------------------
 training:
   epochs: 35
-  batch_size: 128
+  batch_size: 256         # sized for a GPU; drop to 64–128 if training on CPU
   lr: 0.001
   weight_decay: 0.0001
-  num_workers: 2
+  num_workers: 8          # parallel image loading to keep the GPU fed
   grad_clip: 5.0
   device: auto            # auto | cpu | cuda
   augment: true
