@@ -29,16 +29,20 @@ upload/recognize view and a metrics dashboard.
 
 ## Results
 
-Held-out 800-plate synthetic test split:
+The shipped model is trained on synthetic plates + real OpenALPR crops (the real
+set oversampled to carry weight), evaluated on held-out splits of each:
 
-| Metric | Value |
-|--------|-------|
-| Exact-match accuracy | **0.991** |
-| Character accuracy (1 − CER) | 0.999 (CER 0.0013) |
-| End-to-end scene accuracy | 0.98 |
-| Latency | ~6 ms/plate (~169 plates/sec, CPU) |
-| Model size | 6.6M params |
-| Top confusion | 0 ↔ O |
+| Metric | Synthetic test (3,000) | Real test (239) |
+|--------|:---:|:---:|
+| Exact-match accuracy | 0.993 | **0.912** |
+| Character accuracy (1 − CER) | 0.999 | 0.985 |
+
+~7 ms/plate (~150/sec, CPU), 6.6M params, top confusion `0 ↔ O`.
+
+The key finding: a synthetic-only model scores 0.99 on synthetic but **0.095** on
+real plates. Mixing ~1k real crops (oversampled) into training lifted real-plate
+accuracy to 0.912 while holding synthetic at 0.99 — the domain gap is a data
+problem, and a small amount of real data closes most of it.
 
 Detection on real dashcam frames (`RobertLucian/license-plate-dataset`, classical
 backend): mean IoU 0.60 on matched plates. The classical detector handles clear,

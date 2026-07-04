@@ -26,17 +26,18 @@ It's ~6.6M parameters and trains from scratch on a laptop CPU in under an hour.
 
 ## Results
 
-Measured on an 800-plate held-out test split:
+The shipped model is trained on synthetic plates plus real OpenALPR crops, and
+evaluated on a held-out split of each:
 
-| KPI | Value |
-|-----|-------|
-| Exact-match accuracy | **99.1%** |
-| Character accuracy (1 − CER) | 99.9% (CER 0.0013) |
-| End-to-end scene accuracy (detect + read) | 98% |
-| Latency | ~6 ms/plate (~169 plates/sec, CPU) |
-| Model size | 6.6M params |
+| KPI | Synthetic test (3,000) | Real test (239, OpenALPR) |
+|-----|:---:|:---:|
+| Exact-match accuracy | 99.3% | **91.2%** |
+| Character accuracy (1 − CER) | 99.9% | 98.5% |
 
-The dominant error is `0` vs `O`, which is the expected hard case for plate OCR.
+~7 ms/plate (~150/sec on CPU), 6.6M parameters. Training on synthetic alone
+scores ~99% on synthetic but only ~10% on real plates; mixing in real crops is
+what closes that gap — see `docs/PROJECT_LOG.md`. The dominant remaining error is
+`0` vs `O`, the expected hard case for plate reading.
 
 ## Quickstart
 

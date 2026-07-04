@@ -1,24 +1,145 @@
 {
-  "num_samples": 800,
-  "exact_match_accuracy": 0.99125,
-  "character_error_rate": 0.0012953367875647669,
-  "character_accuracy": 0.9987046632124352,
-  "mean_edit_distance": 0.00875,
-  "mean_confidence": 0.9916643465665125,
+  "num_samples": 239,
+  "exact_match_accuracy": 0.9121338912133892,
+  "character_error_rate": 0.015251989389920425,
+  "character_accuracy": 0.9847480106100795,
+  "mean_edit_distance": 0.09623430962343096,
+  "mean_confidence": 0.9834371444790172,
   "accuracy_by_length": {
-    "6": 1.0,
-    "7": 0.9884105960264901
+    "1": 1.0,
+    "3": 1.0,
+    "4": 1.0,
+    "5": 0.8461538461538461,
+    "6": 0.9142857142857143,
+    "7": 0.9065420560747663,
+    "8": 1.0,
+    "10": 1.0
   },
   "top_confusions": [
     {
-      "true": "0",
-      "pred": "O",
-      "count": 4
-    },
-    {
       "true": "O",
       "pred": "0",
-      "count": 3
+      "count": 2
+    },
+    {
+      "true": "0",
+      "pred": "O",
+      "count": 2
+    },
+    {
+      "true": "D",
+      "pred": "S",
+      "count": 2
+    },
+    {
+      "true": "J",
+      "pred": "K",
+      "count": 1
+    },
+    {
+      "true": "K",
+      "pred": "7",
+      "count": 1
+    },
+    {
+      "true": "7",
+      "pred": "5",
+      "count": 1
+    },
+    {
+      "true": "5",
+      "pred": "1",
+      "count": 1
+    },
+    {
+      "true": "4",
+      "pred": "N",
+      "count": 1
+    },
+    {
+      "true": "6",
+      "pred": "4",
+      "count": 1
+    },
+    {
+      "true": "9",
+      "pred": "6",
+      "count": 1
+    },
+    {
+      "true": "1",
+      "pred": "9",
+      "count": 1
+    },
+    {
+      "true": "4",
+      "pred": "1",
+      "count": 1
+    },
+    {
+      "true": "D",
+      "pred": "C",
+      "count": 1
+    },
+    {
+      "true": "W",
+      "pred": "F",
+      "count": 1
+    },
+    {
+      "true": "T",
+      "pred": "W",
+      "count": 1
+    },
+    {
+      "true": "C",
+      "pred": "T",
+      "count": 1
+    },
+    {
+      "true": "2",
+      "pred": "C",
+      "count": 1
+    },
+    {
+      "true": "4",
+      "pred": "2",
+      "count": 1
+    },
+    {
+      "true": "9",
+      "pred": "4",
+      "count": 1
+    },
+    {
+      "true": "A",
+      "pred": "K",
+      "count": 1
+    },
+    {
+      "true": "H",
+      "pred": "M",
+      "count": 1
+    },
+    {
+      "true": "5",
+      "pred": "B",
+      "count": 1
+    },
+    {
+      "true": "I",
+      "pred": "T",
+      "count": 1
+    },
+    {
+      "true": "Y",
+      "pred": "T",
+      "count": 1
+    },
+    {
+      "true": "W",
+      "pred": "G",
+      "count": 1
     }
   ],
   "calibration": [
@@ -28,9 +149,9 @@
         0.8,
         0.9
       ],
-      "mean_confidence": 0.8612207770347595,
-      "accuracy": 1.0,
-      "count": 1
+      "mean_confidence": 0.8710462789805162,
+      "accuracy": 0.75,
+      "count": 8
     },
     {
       "bucket": 9,
@@ -38,185 +159,185 @@
         0.9,
         1.0
       ],
-      "mean_confidence": 0.9918276051015961,
-      "accuracy": 0.9912390488110138,
-      "count": 799
+      "mean_confidence": 0.9873294688252857,
+      "accuracy": 0.9177489177489178,
+      "count": 231
     }
   ],
   "split": "test",
-  "mean_latency_ms_per_plate": 5.927,
-  "throughput_plates_per_sec": 168.7,
+  "mean_latency_ms_per_plate": 6.707,
+  "throughput_plates_per_sec": 149.1,
   "model_params": 6615461,
   "device": "cpu",
-  "weights_val_accuracy": 0.99375,
+  "weights_val_accuracy": 0.9913333333333333,
   "examples": [
     {
       "image": "reports/examples/000.png",
-      "truth": "0MHK140",
-      "pred": "OMHK140",
+      "truth": "5415791",
+      "pred": "5415791",
       "confidence": 0.996,
-      "correct": false
+      "correct": true
     },
     {
       "image": "reports/examples/001.png",
-      "truth": "0FEJ208",
-      "pred": "OFEJ208",
-      "confidence": 0.936,
-      "correct": false
+      "truth": "9A9990A",
+      "pred": "9A9990A",
+      "confidence": 0.964,
+      "correct": true
     },
     {
       "image": "reports/examples/002.png",
-      "truth": "FT06963",
-      "pred": "FTO6963",
-      "confidence": 0.962,
+      "truth": "AJK7551",
+      "pred": "AK7551",
+      "confidence": 0.998,
       "correct": false
     },
     {
       "image": "reports/examples/003.png",
-      "truth": "CGF25OS",
-      "pred": "CGF250S",
-      "confidence": 0.997,
-      "correct": false
+      "truth": "FB8A3E",
+      "pred": "FB8A3E",
+      "confidence": 0.999,
+      "correct": true
     },
     {
       "image": "reports/examples/004.png",
-      "truth": "03FN095",
-      "pred": "03FNO95",
-      "confidence": 0.937,
-      "correct": false
+      "truth": "697BBM",
+      "pred": "697BBM",
+      "confidence": 0.999,
+      "correct": true
     },
     {
       "image": "reports/examples/005.png",
-      "truth": "0LSO232",
-      "pred": "0LS0232",
-      "confidence": 0.997,
+      "truth": "OZL2318",
+      "pred": "0ZL2318",
+      "confidence": 0.993,
       "correct": false
     },
     {
       "image": "reports/examples/006.png",
-      "truth": "EWN18OX",
-      "pred": "EWN180X",
-      "confidence": 0.995,
-      "correct": false
+      "truth": "ANYTEXT",
+      "pred": "ANYTEXT",
+      "confidence": 0.999,
+      "correct": true
     },
     {
       "image": "reports/examples/007.png",
-      "truth": "MFT96RM",
-      "pred": "MFT96RM",
-      "confidence": 0.996,
+      "truth": "469BWW",
+      "pred": "469BWW",
+      "confidence": 0.999,
       "correct": true
     },
     {
       "image": "reports/examples/008.png",
-      "truth": "609MFF",
-      "pred": "609MFF",
-      "confidence": 0.996,
-      "correct": true
+      "truth": "46914",
+      "pred": "N46914",
+      "confidence": 0.91,
+      "correct": false
     },
     {
       "image": "reports/examples/009.png",
-      "truth": "UIX4655",
-      "pred": "UIX4655",
-      "confidence": 0.998,
+      "truth": "RK891AU",
+      "pred": "RK891AU",
+      "confidence": 0.999,
       "correct": true
     },
     {
       "image": "reports/examples/010.png",
-      "truth": "OEY848",
-      "pred": "OEY848",
-      "confidence": 0.997,
+      "truth": "BA268IM",
+      "pred": "BA268IM",
+      "confidence": 0.994,
       "correct": true
     },
     {
       "image": "reports/examples/011.png",
-      "truth": "YSH01DG",
-      "pred": "YSH01DG",
-      "confidence": 0.997,
-      "correct": true
+      "truth": "0JT898",
+      "pred": "OJT898",
+      "confidence": 0.927,
+      "correct": false
     },
     {
       "image": "reports/examples/012.png",
-      "truth": "BIKX819",
-      "pred": "BIKX819",
+      "truth": "1345D",
+      "pred": "1345D",
       "confidence": 0.998,
       "correct": true
     },
     {
       "image": "reports/examples/013.png",
-      "truth": "3UQK499",
-      "pred": "3UQK499",
+      "truth": "JIY4434",
+      "pred": "JIY4434",
       "confidence": 0.998,
       "correct": true
     },
     {
       "image": "reports/examples/014.png",
-      "truth": "SX56104",
-      "pred": "SX56104",
-      "confidence": 0.998,
-      "correct": true
+      "truth": "6MMD595",
+      "pred": "6MMC595",
+      "confidence": 0.921,
+      "correct": false
     },
     {
       "image": "reports/examples/015.png",
-      "truth": "LLRQ190",
-      "pred": "LLRQ190",
+      "truth": "FB5X8T",
+      "pred": "FB5X8T",
       "confidence": 0.998,
       "correct": true
     },
     {
       "image": "reports/examples/016.png",
-      "truth": "WSLH562",
-      "pred": "WSLH562",
-      "confidence": 0.997,
+      "truth": "8812044",
+      "pred": "8812044",
+      "confidence": 1.0,
       "correct": true
     },
     {
       "image": "reports/examples/017.png",
-      "truth": "949ERX",
-      "pred": "949ERX",
-      "confidence": 0.998,
-      "correct": true
+      "truth": "BEG0DS",
+      "pred": "BEG0S",
+      "confidence": 0.995,
+      "correct": false
     },
     {
       "image": "reports/examples/018.png",
-      "truth": "97LE496",
-      "pred": "97LE496",
-      "confidence": 0.967,
+      "truth": "5UVR090",
+      "pred": "5UVR090",
+      "confidence": 0.997,
       "correct": true
     },
     {
       "image": "reports/examples/019.png",
-      "truth": "IDA1910",
-      "pred": "IDA1910",
-      "confidence": 0.997,
+      "truth": "WRW935",
+      "pred": "WRW935",
+      "confidence": 0.943,
       "correct": true
     },
     {
       "image": "reports/examples/020.png",
-      "truth": "EWC50LB",
-      "pred": "EWC50LB",
-      "confidence": 0.997,
-      "correct": true
+      "truth": "WTC249",
+      "pred": "FWTC249",
+      "confidence": 0.964,
+      "correct": false
     },
     {
       "image": "reports/examples/021.png",
-      "truth": "MA41814",
-      "pred": "MA41814",
-      "confidence": 0.928,
+      "truth": "017M149",
+      "pred": "017M149",
+      "confidence": 0.999,
       "correct": true
     },
     {
       "image": "reports/examples/022.png",
-      "truth": "XSQ242",
-      "pred": "XSQ242",
-      "confidence": 0.931,
+      "truth": "PAP263",
+      "pred": "PAP263",
+      "confidence": 0.986,
       "correct": true
     },
     {
       "image": "reports/examples/023.png",
-      "truth": "BD47288",
-      "pred": "BD47288",
-      "confidence": 0.998,
-      "correct": true
+      "truth": "BA302OZ",
+      "pred": "BA3020Z",
+      "confidence": 0.96,
+      "correct": false
     }
   ]
 }

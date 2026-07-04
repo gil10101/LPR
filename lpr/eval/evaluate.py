@@ -93,9 +93,20 @@ def evaluate_recognizer(config_path: Optional[str] = None,
             os.remove(os.path.join(examples_dir, old))
     os.makedirs(examples_dir, exist_ok=True)
 
-    order = sorted(range(len(samples)),
-                   key=lambda i: (preds[i] == truths[i]))  # errors first
-    chosen = order[:num_examples]
+    # Build a representative gallery: interleave correct reads and errors so the
+    # page reflects real performance (mostly right, some instructive mistakes)
+    # rather than leading with a wall of failures.
+    correct_idx = [i for i in range(len(samples)) if preds[i] == truths[i]]
+    error_idx = [i for i in range(len(samples)) if preds[i] != truths[i]]
+    chosen = []
+    ci = ei = 0
+    while len(chosen) < num_examples and (ci < len(correct_idx) or ei < len(error_idx)):
+        # ~2 correct : 1 error, so the gallery skews correct like the model does.
+        for _ in range(2):
+            if ci < len(correct_idx) and len(chosen) < num_examples:
+                chosen.append(correct_idx[ci]); ci += 1
+        if ei < len(error_idx) and len(chosen) < num_examples:
+            chosen.append(error_idx[ei]); ei += 1
     examples = []
     for rank, i in enumerate(chosen):
         dst_name = f"{rank:03d}.png"
