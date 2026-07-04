@@ -157,6 +157,6 @@ training, set `training.device: cuda` (it's `auto` by default).
 
 ## Requirements
 
-Python 3.9+, PyTorch, OpenCV, Flask, NumPy, Pillow, and matplotlib. The pins in
-`requirements.txt` are a mutually compatible set (torch 2.2 / numpy 1.26 /
-opencv 4.10).
+Python 3.9+, PyTorch, OpenCV, Flask, NumPy, Pillow, and matplotlib.
+`requirements.txt` uses version ranges, so `pip install -r requirements.txt`
+resolves a compatible modern stack on Linux, macOS/Apple Silicon, or CUDA.

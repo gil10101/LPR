@@ -1,19 +1,18 @@
 # Core — required to train, evaluate, and serve the recognizer.
-# Pinned to a mutually compatible set (torch 2.2 <-> numpy 1.26 <-> opencv 4.10).
-torch==2.2.2
-numpy==1.26.4
-opencv-python-headless==4.10.0.84
-Pillow>=10.0.0
+# Version ranges (not hard pins) so this installs on modern Python, macOS/Apple
+# Silicon, Linux, and CUDA setups alike. Any recent PyTorch works; it selects a
+# compatible NumPy automatically.
+torch>=2.2
+numpy>=1.24
+opencv-python-headless>=4.9
+Pillow>=10.0
 PyYAML>=6.0
 tqdm>=4.65
 matplotlib>=3.7
 python-Levenshtein>=0.25    # fast edit distance for CER (pure-python fallback exists)
 Flask>=3.0                  # web dashboard
 
-# Optional — real data from HuggingFace (needs network access).
-# Install with:  pip install datasets
-# datasets>=2.19
-
-# Optional — learned YOLO detector instead of the classical fallback.
-# Install with:  pip install ultralytics
-# ultralytics>=8.1
+# Optional — real data from HuggingFace (needs network access):
+#   pip install datasets
+# Optional — learned YOLO detector + detector training:
+#   pip install ultralytics
