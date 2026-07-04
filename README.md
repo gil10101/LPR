@@ -148,10 +148,10 @@ docs/                       # dataset notes + project log
 
 ## Configuration
 
-`config.yaml` drives everything — model dimensions, training hyper-parameters,
-dataset sizes, detector backend, and the web server. Change a value there and
-every script and the app pick it up. Set `training.device: cuda` for GPU
-training (it defaults to `auto`).
+All settings live in `config.yaml` — model dimensions, training
+hyper-parameters, dataset sizes, the detector backend, and the web server. The
+scripts and the app read from it, so a change there applies everywhere. For GPU
+training, set `training.device: cuda` (it's `auto` by default).
 
 ## Requirements
 
