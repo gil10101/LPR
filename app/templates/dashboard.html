@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% set active = 'dashboard' %}
+{% block title %}Metrics &amp; KPIs — License Plate Recognition{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  .kpis { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2,1fr); } }
+  .kpi { background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); padding:18px 20px; }
+  .kpi .label { color:var(--muted); font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+  .kpi .value { font-size:32px; font-weight:800; margin-top:6px; }
+  .kpi .value.good { color: var(--good); } .kpi .value.warn { color: var(--warn); }
+  .kpi .foot { color:var(--muted); font-size:12px; margin-top:4px; }
+  .two { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 900px) { .two { grid-template-columns: 1fr; } }
+  table { width:100%; border-collapse: collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  .conf-cell { font-family:"Courier New",monospace; font-weight:700; }
+  .gallery { grid-template-columns: repeat(4,1fr); }
+  @media (max-width:900px){ .gallery { grid-template-columns: repeat(2,1fr);} }
+  .card { background:var(--panel-2); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .card img { width:100%; display:block; background:#000; }
+  .card .meta { padding:8px 10px; font-size:13px; }
+  .mono { font-family:"Courier New",monospace; font-weight:700; letter-spacing:1px; }
+  .ok { color:var(--good); } .no { color:var(--bad); }
+  .notice { background: rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.35);
+            color:#f5c563; padding:14px 16px; border-radius:10px; font-size:14px; }
+  canvas { max-height: 300px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Model performance</h1>
+<p class="sub">KPIs and diagnostics for the CRNN recognizer, computed on the held-out test split.</p>
+
+{% if not metrics %}
+<div class="notice">
+  No evaluation metrics yet. After training, run
+  <code>python scripts/evaluate.py</code> to generate the KPI report, then reload.
+</div>
+{% else %}
+
+<div class="grid kpis" id="kpis"></div>
+
+<div class="grid two" style="margin-top:18px">
+  <div class="panel"><h2>Training curve</h2><canvas id="curveChart"></canvas>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">CTC loss (red) and validation exact-match accuracy (blue) per epoch.</p></div>
+  <div class="panel"><h2>Accuracy by plate length</h2><canvas id="lengthChart"></canvas>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">Exact-match accuracy bucketed by ground-truth string length.</p></div>
+</div>
+
+<div class="grid two" style="margin-top:18px">
+  <div class="panel"><h2>Confidence calibration</h2><canvas id="calChart"></canvas>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">Predicted confidence vs. observed accuracy. Points on the diagonal = well calibrated.</p></div>
+  <div class="panel"><h2>Top character confusions</h2>
+    <table id="confTable"><thead><tr><th>True</th><th>Predicted as</th><th>Count</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:18px">
+  <h2>Example predictions</h2>
+  <div class="grid gallery" id="gallery"></div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if metrics %}
+<script>
+const METRICS = {{ metrics | tojson }};
+const HISTORY = {{ (history or {}) | tojson }};
+
+const pct = x => (x*100).toFixed(1) + '%';
+const cls = (v, hi, mid) => v>=hi ? 'good' : (v>=mid ? 'warn' : '');
+
+// ---- KPI cards ---------------------------------------------------------
+const kpis = [
+  {label:'Exact-match accuracy', value:pct(METRICS.exact_match_accuracy),
+   foot:`${METRICS.num_samples} test plates`, cls:cls(METRICS.exact_match_accuracy,.9,.75)},
+  {label:'Character accuracy', value:pct(METRICS.character_accuracy),
+   foot:`CER ${(METRICS.character_error_rate*100).toFixed(2)}%`, cls:cls(METRICS.character_accuracy,.97,.9)},
+  {label:'Mean edit distance', value:METRICS.mean_edit_distance.toFixed(3),
+   foot:'chars off per plate'},
+  {label:'Mean confidence', value:pct(METRICS.mean_confidence), foot:'model self-reported'},
+  {label:'Latency', value:METRICS.mean_latency_ms_per_plate.toFixed(2)+' ms',
+   foot:`${METRICS.throughput_plates_per_sec} plates/sec (${METRICS.device})`},
+  {label:'Model size', value:(METRICS.model_params/1e6).toFixed(2)+'M',
+   foot:'trainable parameters'},
+  {label:'Test set', value:METRICS.num_samples, foot:`split: ${METRICS.split}`},
+  {label:'Val accuracy', value:METRICS.weights_val_accuracy!=null?pct(METRICS.weights_val_accuracy):'–',
+   foot:'best checkpoint'},
+];
+document.getElementById('kpis').innerHTML = kpis.map(k => `
+  <div class="kpi"><div class="label">${k.label}</div>
+  <div class="value ${k.cls||''}">${k.value}</div><div class="foot">${k.foot}</div></div>`).join('');
+
+const gridColor = 'rgba(255,255,255,.06)', tick = '#9aa7b4';
+Chart.defaults.color = tick; Chart.defaults.font.family = 'system-ui';
+
+// ---- Training curve ----------------------------------------------------
+const hist = (HISTORY && HISTORY.history) || [];
+if (hist.length) {
+  new Chart(document.getElementById('curveChart'), {
+    data: {
+      labels: hist.map(h=>h.epoch),
+      datasets: [
+        {type:'line', label:'train loss', yAxisID:'y', data:hist.map(h=>h.train_loss),
+         borderColor:'#ef4444', backgroundColor:'#ef4444', tension:.3, pointRadius:0},
+        {type:'line', label:'val accuracy', yAxisID:'y1', data:hist.map(h=>h.val_exact_match_accuracy),
+         borderColor:'#3b82f6', backgroundColor:'#3b82f6', tension:.3, pointRadius:0},
+      ]},
+    options: {responsive:true, interaction:{mode:'index',intersect:false},
+      scales:{ x:{grid:{color:gridColor}, title:{display:true,text:'epoch'}},
+        y:{position:'left', grid:{color:gridColor}, title:{display:true,text:'CTC loss'}},
+        y1:{position:'right', min:0, max:1, grid:{drawOnChartArea:false}, title:{display:true,text:'val acc'}} }}
+  });
+}
+
+// ---- Accuracy by length -----------------------------------------------
+const abl = METRICS.accuracy_by_length || {};
+new Chart(document.getElementById('lengthChart'), {
+  type:'bar',
+  data:{ labels:Object.keys(abl), datasets:[{label:'accuracy', data:Object.values(abl),
+    backgroundColor:'#22c55e'}]},
+  options:{ scales:{ y:{min:0,max:1,grid:{color:gridColor}}, x:{grid:{color:gridColor}} },
+    plugins:{legend:{display:false}} }
+});
+
+// ---- Calibration -------------------------------------------------------
+const cal = METRICS.calibration || [];
+new Chart(document.getElementById('calChart'), {
+  data:{ datasets:[
+    {type:'line', label:'ideal', data:[{x:0,y:0},{x:1,y:1}], borderColor:'#666',
+     borderDash:[6,6], pointRadius:0},
+    {type:'scatter', label:'model', data:cal.map(c=>({x:c.mean_confidence,y:c.accuracy})),
+     backgroundColor:'#a855f7', pointRadius:5},
+  ]},
+  options:{ scales:{ x:{min:0,max:1,grid:{color:gridColor},title:{display:true,text:'confidence'}},
+    y:{min:0,max:1,grid:{color:gridColor},title:{display:true,text:'accuracy'}} } }
+});
+
+// ---- Confusion table ---------------------------------------------------
+const confBody = document.querySelector('#confTable tbody');
+(METRICS.top_confusions||[]).slice(0,10).forEach(c => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="mono">${c.true}</td><td class="mono">${c.pred}</td><td>${c.count}</td>`;
+  confBody.appendChild(tr);
+});
+if (!(METRICS.top_confusions||[]).length)
+  confBody.innerHTML = '<tr><td colspan="3" class="muted">No substitution errors recorded 🎉</td></tr>';
+
+// ---- Example gallery ---------------------------------------------------
+const gal = document.getElementById('gallery');
+(METRICS.examples||[]).forEach(e => {
+  const div = document.createElement('div'); div.className='card';
+  div.innerHTML = `<img src="/data/${e.image}" loading="lazy">
+    <div class="meta"><span class="mono ${e.correct?'ok':'no'}">${e.pred||'∅'}</span>
+    ${e.correct?'✓':'<span class="muted">≠ '+e.truth+'</span>'}
+    <div class="muted" style="font-size:12px">conf ${(e.confidence*100).toFixed(0)}%</div></div>`;
+  gal.appendChild(div);
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}License Plate Recognition{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #0e1116; --panel: #161b22; --panel-2: #1c232d; --border: #2b333d;
+      --text: #e6edf3; --muted: #9aa7b4; --accent: #3b82f6; --accent-2: #22d3ee;
+      --good: #22c55e; --warn: #f59e0b; --bad: #ef4444; --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 28px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #12161c, #0e1116); position: sticky; top: 0; z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+    .brand .badge {
+      display: inline-grid; place-items: center; width: 38px; height: 26px;
+      background: #f5f5f5; color: #111; border-radius: 5px; font-weight: 800;
+      font-family: "Courier New", monospace; letter-spacing: 1px; border: 2px solid #333;
+      font-size: 12px;
+    }
+    nav a {
+      color: var(--muted); margin-left: 22px; font-weight: 600; font-size: 14px;
+      padding-bottom: 4px; border-bottom: 2px solid transparent;
+    }
+    nav a.active, nav a:hover { color: var(--text); border-color: var(--accent); }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px; }
+    .panel {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px;
+    }
+    h1 { font-size: 24px; margin: 0 0 4px; }
+    h2 { font-size: 17px; margin: 0 0 14px; }
+    .sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+    .grid { display: grid; gap: 18px; }
+    .btn {
+      background: var(--accent); color: #fff; border: none; padding: 11px 20px;
+      border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn.secondary { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); }
+    .muted { color: var(--muted); }
+    .pill { display:inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .pill.good { background: rgba(34,197,94,.15); color: var(--good); }
+    .pill.warn { background: rgba(245,158,11,.15); color: var(--warn); }
+    code { background: var(--panel-2); padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+    footer { text-align: center; color: var(--muted); font-size: 13px; padding: 30px; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="badge">LPR</span>
+      <span>License Plate Recognition</span>
+    </div>
+    <nav>
+      <a href="{{ url_for('index') }}" class="{{ 'active' if active=='recognize' }}">Recognize</a>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active=='dashboard' }}">Metrics &amp; KPIs</a>
+    </nav>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+  <footer>
+    CRNN + CTC recognizer trained from scratch &middot;
+    detection &rarr; sequence recognition pipeline
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

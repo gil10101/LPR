@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% set active = 'recognize' %}
+{% block title %}Recognize — License Plate Recognition{% endblock %}
+
+{% block head %}
+<style>
+  .layout { grid-template-columns: 1fr 1fr; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .drop {
+    border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px 20px;
+    text-align: center; cursor: pointer; transition: .15s; background: var(--panel-2);
+  }
+  .drop.hover { border-color: var(--accent); background: rgba(59,130,246,.08); }
+  .drop input { display: none; }
+  .preview-img, .result-img { width: 100%; border-radius: 10px; display: block; }
+  .plate-readout {
+    font-family: "Courier New", monospace; font-size: 34px; font-weight: 800;
+    letter-spacing: 4px; background: #f5f5f5; color: #111; border: 3px solid #333;
+    border-radius: 8px; padding: 12px 6px; text-align: center; margin: 6px 0 4px;
+  }
+  .conf-bar { height: 8px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
+  .conf-bar > span { display:block; height:100%; background: linear-gradient(90deg,var(--accent),var(--accent-2)); }
+  .stat-row { display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; }
+  .stat-row .s { font-size:13px; color:var(--muted); }
+  .stat-row .s b { display:block; color:var(--text); font-size:18px; }
+  .notice { background: rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.35);
+            color:#f5c563; padding:12px 16px; border-radius:10px; font-size:14px; margin-bottom:18px; }
+  .spinner { width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);
+             border-radius:50%;animation:spin .8s linear infinite; margin: 8px auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .plate-item { border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; background:var(--panel-2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Read a license plate</h1>
+<p class="sub">Upload a car photo or a cropped plate. The detector localises the
+plate and the CRNN reads the characters.</p>
+
+{% if not model_ready %}
+<div class="notice">
+  ⚠ No trained recognizer found. Train one first:
+  <code>python scripts/train_recognizer.py</code> (generate data with
+  <code>python scripts/generate_synthetic.py</code> if needed).
+</div>
+{% endif %}
+
+<div class="grid layout">
+  <div class="panel">
+    <h2>Input</h2>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="image/*">
+      <div id="dropText">
+        <div style="font-size:34px">📷</div>
+        <div style="font-weight:700;margin-top:6px">Drop an image or click to browse</div>
+        <div class="muted" style="font-size:13px">PNG, JPG, WEBP · up to {{ 16 }}MB</div>
+      </div>
+      <img id="preview" class="preview-img" style="display:none">
+    </label>
+    <div style="margin-top:16px; display:flex; gap:10px;">
+      <button class="btn" id="runBtn" disabled>Recognize plate</button>
+      <button class="btn secondary" id="clearBtn">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Result</h2>
+    <div id="empty" class="muted">Results appear here after you run recognition.</div>
+    <div id="loading" style="display:none"><div class="spinner"></div>
+      <div class="muted" style="text-align:center">Detecting &amp; reading…</div></div>
+    <div id="output" style="display:none">
+      <img id="resultImg" class="result-img" style="margin-bottom:14px">
+      <div id="plates"></div>
+      <div class="stat-row">
+        <div class="s">Detect<b id="tDetect">–</b></div>
+        <div class="s">Recognize<b id="tRec">–</b></div>
+        <div class="s">Total<b id="tTotal">–</b></div>
+        <div class="s">Plates found<b id="tCount">–</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('file');
+const preview = document.getElementById('preview');
+const dropText = document.getElementById('dropText');
+const runBtn = document.getElementById('runBtn');
+const clearBtn = document.getElementById('clearBtn');
+let selectedFile = null;
+
+function setFile(f) {
+  if (!f) return;
+  selectedFile = f;
+  const url = URL.createObjectURL(f);
+  preview.src = url; preview.style.display = 'block'; dropText.style.display = 'none';
+  runBtn.disabled = false;
+}
+fileInput.addEventListener('change', e => setFile(e.target.files[0]));
+['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('hover'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('hover'); }));
+drop.addEventListener('drop', e => setFile(e.dataTransfer.files[0]));
+
+clearBtn.addEventListener('click', () => {
+  selectedFile = null; fileInput.value = '';
+  preview.style.display='none'; dropText.style.display='block'; runBtn.disabled=true;
+  document.getElementById('output').style.display='none';
+  document.getElementById('empty').style.display='block';
+});
+
+runBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+  document.getElementById('empty').style.display='none';
+  document.getElementById('output').style.display='none';
+  document.getElementById('loading').style.display='block';
+
+  const fd = new FormData(); fd.append('image', selectedFile);
+  let res, data;
+  try {
+    res = await fetch('/recognize', { method:'POST', body: fd });
+    data = await res.json();
+  } catch (err) {
+    document.getElementById('loading').style.display='none';
+    document.getElementById('empty').style.display='block';
+    document.getElementById('empty').textContent = 'Request failed: ' + err;
+    return;
+  }
+  document.getElementById('loading').style.display='none';
+
+  if (!res.ok) {
+    document.getElementById('empty').style.display='block';
+    document.getElementById('empty').textContent = data.error || 'Error';
+    return;
+  }
+
+  document.getElementById('resultImg').src = data.result_url + '?t=' + Date.now();
+  const platesEl = document.getElementById('plates');
+  platesEl.innerHTML = '';
+  if (!data.plates.length) {
+    platesEl.innerHTML = '<div class="muted">No readable plate found.</div>';
+  }
+  data.plates.forEach(p => {
+    const pct = Math.round(p.confidence * 100);
+    const div = document.createElement('div');
+    div.className = 'plate-item';
+    div.innerHTML = `
+      <div class="plate-readout">${p.text || '—'}</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin:6px 0 4px">
+        <span class="muted">Recognition confidence</span><b>${pct}%</b></div>
+      <div class="conf-bar"><span style="width:${pct}%"></span></div>`;
+    platesEl.appendChild(div);
+  });
+  document.getElementById('tDetect').textContent = data.timing_ms.detect + ' ms';
+  document.getElementById('tRec').textContent = data.timing_ms.recognize + ' ms';
+  document.getElementById('tTotal').textContent = data.timing_ms.total + ' ms';
+  document.getElementById('tCount').textContent = data.plates.length;
+  document.getElementById('output').style.display='block';
+});
+</script>
+{% endblock %}

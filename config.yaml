@@ -1,0 +1,74 @@
+# Central configuration for the License Plate Recognition System.
+# Every script and the web app read this file, so changing a value here changes
+# behaviour everywhere. Paths are relative to the project root.
+
+# ---------------------------------------------------------------------------
+# Recognition model (CRNN + CTC) — reads the plate string from a crop.
+# ---------------------------------------------------------------------------
+recognizer:
+  img_height: 32          # plate crops are resized to this height
+  img_width: 128          # ...and this width before entering the CNN
+  channels: 1             # 1 = grayscale (robust + cheap); 3 = RGB
+  rnn_hidden: 128         # BiLSTM hidden units per direction (128 = CPU-friendly)
+  rnn_layers: 2           # stacked BiLSTM layers
+  cnn_dropout: 0.1
+  weights_path: models/recognizer/crnn.pt
+  metrics_path: models/recognizer/metrics.json   # written by evaluation
+
+# ---------------------------------------------------------------------------
+# Detection stage — localises the plate inside a full photo.
+#   backend: "classical" needs no training/deps (OpenCV contour search);
+#            "yolo" uses an optional Ultralytics model at weights_path.
+# ---------------------------------------------------------------------------
+detector:
+  backend: classical
+  yolo_weights: models/detector/plate_yolo.pt
+  conf_threshold: 0.25
+  min_aspect_ratio: 2.0   # plates are wide; filter out square-ish contours
+  max_aspect_ratio: 6.5
+
+# ---------------------------------------------------------------------------
+# Synthetic data generator (used when real datasets are unavailable, and for
+# augmenting real data). Fully offline — no network required.
+# ---------------------------------------------------------------------------
+synthetic:
+  out_dir: data/synthetic
+  num_train: 8000
+  num_val: 1500
+  num_test: 1500
+  seed: 1234
+
+# ---------------------------------------------------------------------------
+# HuggingFace datasets (used on machines with network access). These are the
+# real-data loaders; the identifiers below are sensible defaults.
+# ---------------------------------------------------------------------------
+huggingface:
+  recognition_dataset: keremberke/license-plate-object-detection
+  recognition_config: full
+  detection_dataset: keremberke/license-plate-object-detection
+  cache_dir: data/hf_cache
+
+# ---------------------------------------------------------------------------
+# Training hyper-parameters for the recognizer.
+# ---------------------------------------------------------------------------
+training:
+  epochs: 40
+  batch_size: 64
+  lr: 0.001
+  weight_decay: 0.0001
+  num_workers: 2
+  grad_clip: 5.0
+  device: auto            # auto | cpu | cuda
+  augment: true
+  early_stop_patience: 8  # measured on val CER, which keeps improving through
+                          # the early CTC "blank collapse" phase
+  reports_dir: reports
+
+# ---------------------------------------------------------------------------
+# Web dashboard.
+# ---------------------------------------------------------------------------
+app:
+  host: 127.0.0.1
+  port: 5000
+  upload_dir: app/static/uploads
+  max_upload_mb: 16
