@@ -104,6 +104,8 @@ labels it needs. For real data:
   `labels.csv` + crops layout the trainer already reads.
 
 `docs/DATASETS.md` covers the specific datasets and download commands;
+`docs/LOCAL_TRAINING.md` walks through training on your own Kaggle/HF datasets
+(CSV recognition sets and YOLO detection sets) on a GPU machine;
 `docs/PROJECT_LOG.md` records the build history, results, and next steps.
 
 ## Detection
