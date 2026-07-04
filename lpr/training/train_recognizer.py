@@ -32,10 +32,16 @@ from ..utils.ctc import greedy_decode
 
 
 def resolve_device(pref: str) -> torch.device:
-    if pref == "cpu":
-        return torch.device("cpu")
-    if pref == "cuda":
-        return torch.device("cuda")
+    """Resolve the training device from a config preference.
+
+    'auto' prefers CUDA, then falls back to CPU. Apple-Silicon MPS is available
+    as an explicit choice ('mps') but is not auto-selected: the CTC loss isn't
+    implemented for MPS in current PyTorch, so an MPS run needs the environment
+    variable PYTORCH_ENABLE_MPS_FALLBACK=1 to route that one op to the CPU. For
+    the recognizer, plain CPU is the reliable default on a Mac.
+    """
+    if pref in ("cpu", "cuda", "mps"):
+        return torch.device(pref)
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
