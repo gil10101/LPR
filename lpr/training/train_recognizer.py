@@ -60,15 +60,25 @@ def evaluate(model, loader, codec, device) -> tuple:
 def train(config_path: Optional[str] = None,
           data_dir: Optional[str] = None,
           epochs: Optional[int] = None,
-          limit: Optional[int] = None) -> dict:
+          limit: Optional[int] = None,
+          extra_data_dir: Optional[str] = None,
+          extra_oversample: int = 1) -> dict:
     """Train the recognizer and return a summary dict.
 
     Parameters
     ----------
-    config_path : path to config.yaml (defaults to project root).
-    data_dir    : directory containing labels.csv (defaults to synthetic out_dir).
-    epochs      : override config epoch count.
-    limit       : optional cap on #train samples (fast smoke runs).
+    config_path      : path to config.yaml (defaults to project root).
+    data_dir         : directory containing labels.csv (defaults to synthetic).
+    epochs           : override config epoch count.
+    limit            : optional cap on #train samples (fast smoke runs).
+    extra_data_dir   : a second labels.csv dir (e.g. real plates) mixed into the
+                       training set. Its train split is added; its val samples,
+                       if any, are appended to validation so the run is judged on
+                       real data too.
+    extra_oversample : repeat the extra train samples this many times. Real sets
+                       are small next to synthetic, so oversampling (with the
+                       usual augmentation) gives them real weight without letting
+                       the model ignore them.
     """
     cfg: Config = load_config(config_path)
     codec = DEFAULT_CODEC
@@ -88,6 +98,21 @@ def train(config_path: Optional[str] = None,
     # Only keep samples that actually carry a usable label.
     train_samples = [(p, t) for p, t in train_samples if normalize_plate_text(t)]
     val_samples = [(p, t) for p, t in val_samples if normalize_plate_text(t)]
+
+    # Fold in an extra (e.g. real) dataset, oversampled to give it weight.
+    if extra_data_dir:
+        extra_csv = os.path.join(extra_data_dir, "labels.csv")
+        extra_train = [(p, t) for p, t in
+                       load_samples_from_labels_csv(extra_csv, split="train")
+                       if normalize_plate_text(t)]
+        extra_val = [(p, t) for p, t in
+                     load_samples_from_labels_csv(extra_csv, split="val")
+                     if normalize_plate_text(t)]
+        train_samples = train_samples + extra_train * max(1, extra_oversample)
+        val_samples = val_samples + extra_val
+        print(f"[train] mixed in {len(extra_train)} extra train samples "
+              f"x{extra_oversample} from {extra_data_dir}")
+
     if limit:
         train_samples = train_samples[:limit]
     if not train_samples:

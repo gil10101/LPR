@@ -33,9 +33,9 @@ detector:
 # ---------------------------------------------------------------------------
 synthetic:
   out_dir: data/synthetic
-  num_train: 8000
-  num_val: 1500
-  num_test: 1500
+  num_train: 20000
+  num_val: 3000
+  num_test: 3000
   seed: 1234
 
 # ---------------------------------------------------------------------------
@@ -52,8 +52,8 @@ huggingface:
 # Training hyper-parameters for the recognizer.
 # ---------------------------------------------------------------------------
 training:
-  epochs: 40
-  batch_size: 64
+  epochs: 35
+  batch_size: 128
   lr: 0.001
   weight_decay: 0.0001
   num_workers: 2
