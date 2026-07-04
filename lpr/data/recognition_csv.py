@@ -20,11 +20,12 @@ from typing import List, Optional, Tuple
 
 from ..charset import normalize_plate_text
 
-# Candidate column names, most specific first.
-_IMAGE_COLUMNS = ["image", "filename", "file", "path", "img", "image_path",
-                  "img_path", "image_id", "id"]
-_TEXT_COLUMNS = ["text", "plate", "label", "plate_number", "lp", "number",
-                 "plate_text", "value", "gt", "ground_truth"]
+# Candidate column names, most specific first. Both singular and plural forms
+# appear in the wild (e.g. Kaggle's lpr.csv uses "images"/"labels").
+_IMAGE_COLUMNS = ["image", "images", "filename", "file", "path", "img",
+                  "image_path", "img_path", "image_name", "image_id", "id"]
+_TEXT_COLUMNS = ["text", "plate", "label", "labels", "plate_number", "lp",
+                 "number", "plate_text", "value", "gt", "ground_truth"]
 
 
 def _pick_column(header: List[str], candidates: List[str]) -> Optional[str]:
