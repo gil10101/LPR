@@ -18,14 +18,21 @@ python -c "import torch; print('CUDA available:', torch.cuda.is_available())"   
 
 ## 1. Get the datasets onto this machine
 
-Put both under `data/` (gitignored). Easiest is the Kaggle CLI directly on the
-GPU box (drop your `kaggle.json` in `~/.kaggle/`):
+Put both under `data/` (gitignored). Set your Kaggle credentials once in a
+`.env` file at the repo root, then run the download script:
 
 ```bash
 pip install kaggle
-kaggle datasets download -d nickyazdani/license-plate-text-recognition-dataset -p data/nicklpsr --unzip
-kaggle datasets download -d fareselmenshawii/large-license-plate-dataset       -p data/llpd     --unzip
+cp .env.example .env          # Windows: copy .env.example .env
+#   edit .env and set KAGGLE_USERNAME + KAGGLE_KEY
+#   (kaggle.com -> Settings -> API -> Create New Token gives you both)
+python scripts/download_kaggle.py
 ```
+
+`.env` is gitignored, so your key is never committed. The script loads the
+credentials before importing the Kaggle client (which avoids the
+`KeyError: 'username'` from a half-configured token) and unzips both sets into
+`data/nicklpsr` and `data/llpd`.
 
 Then confirm the paths — the recognizer needs `lpr.csv` + the crops folder, the
 detector needs `images/{train,val}` + `labels/{train,val}`:
